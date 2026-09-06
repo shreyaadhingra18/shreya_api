@@ -1,7 +1,5 @@
-{
-  "name": "shreya-portfolio-chat-api",
-  "version": "1.0.0",
+{ "name": "shreya-portfolio-chat-api",
+  "version": "1.0.0", 
   "private": true,
-  "description": "Serverless backend for the Portfolio Copilot chat widget on shreyaadhingra18.infinityfreeapp.com"
-  "type": "module"
+  "description": "Serverless backend for the Portfolio Copilot chat widget on shreyaadhingra18.infinityfreeapp.com" 
 }
