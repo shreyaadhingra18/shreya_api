@@ -8,9 +8,12 @@
  *
  * Your Gemini key stays here as a Vercel environment variable — never in
  * the frontend code.
+ *
+ * Uses CommonJS (module.exports) on purpose — this is Node's default, so
+ * it works with a plain package.json with no extra fields needed.
  */
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS: allow your InfinityFree domain to call this function.
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -127,11 +130,13 @@ CONTACT
     }
 
     const data = await geminiRes.json();
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+    const reply = (data && data.candidates && data.candidates[0] && data.candidates[0].content
+      && data.candidates[0].content.parts && data.candidates[0].content.parts[0]
+      && data.candidates[0].content.parts[0].text || '').trim()
       || "Sorry, I didn't catch that — could you rephrase?";
 
     res.status(200).json({ reply });
   } catch (err) {
     res.status(502).json({ reply: "I'm having trouble reaching the assistant right now — please try again shortly, or reach Shreya directly via the Contact section." });
   }
-}
+};
