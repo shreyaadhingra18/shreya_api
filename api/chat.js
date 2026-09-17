@@ -143,7 +143,7 @@ CONTACT
           }
         ],
         generationConfig: {
-          maxOutputTokens: 300,
+          maxOutputTokens: 1000,
           temperature: 0.6
         }
       })
