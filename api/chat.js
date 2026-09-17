@@ -125,6 +125,8 @@ CONTACT
     });
 
     if (!geminiRes.ok) {
+      const errorBody = await geminiRes.text();
+      console.error('Gemini API error:', geminiRes.status, errorBody);
       res.status(502).json({ reply: "I'm having trouble reaching the assistant right now — please try again shortly, or reach Shreya directly via the Contact section." });
       return;
     }
@@ -137,6 +139,7 @@ CONTACT
 
     res.status(200).json({ reply });
   } catch (err) {
+    console.error('chat.js caught error:', err && err.message, err && err.stack);
     res.status(502).json({ reply: "I'm having trouble reaching the assistant right now — please try again shortly, or reach Shreya directly via the Contact section." });
   }
 };
