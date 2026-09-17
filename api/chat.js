@@ -142,19 +142,41 @@ CONTACT
     );
     const data = await geminiRes.json();
 
+console.log('Gemini status:', geminiRes.status);
+console.log('Gemini interaction status:', data?.status);
 console.log('Gemini response:', JSON.stringify(data));
 
-const reply =
-  data?.steps
-    ?.filter(step => step?.type === 'model_output')
-    ?.flatMap(step => step?.content || [])
-    ?.filter(content => content?.type === 'text')
-    ?.map(content => content.text)
-    ?.join('')
-    ?.trim()
-  || "Sorry, I didn't catch that — could you rephrase?";
+let reply = '';
+
+if (Array.isArray(data?.steps)) {
+  for (const step of data.steps) {
+    if (step?.type !== 'model_output') continue;
+
+    if (Array.isArray(step?.content)) {
+      for (const content of step.content) {
+        if (
+          content?.type === 'text' &&
+          typeof content?.text === 'string'
+        ) {
+          reply += content.text;
+        }
+      }
+    }
+  }
+}
+
+reply = reply.trim();
+
+if (!reply) {
+  console.error('No text found in Gemini response:', JSON.stringify(data));
+
+  reply = "Sorry, I couldn't get a response just now.";
+}
+
+console.log('Final reply sent to browser:', reply);
 
 res.status(200).json({ reply });
+
 
     
   } catch (err) {
