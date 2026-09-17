@@ -140,29 +140,23 @@ CONTACT
         }),
       }
     );
-
     const data = await geminiRes.json();
 
-    if (!geminiRes.ok) {
-      console.error('Gemini API error:', data);
+console.log('Gemini response:', JSON.stringify(data));
 
-      res.status(502).json({
-        reply:
-          "I'm having trouble reaching the assistant right now — please try again shortly, or reach Shreya directly via the Contact section.",
-      });
-      return;
-    }
+const reply =
+  data?.steps
+    ?.filter(step => step?.type === 'model_output')
+    ?.flatMap(step => step?.content || [])
+    ?.filter(content => content?.type === 'text')
+    ?.map(content => content.text)
+    ?.join('')
+    ?.trim()
+  || "Sorry, I didn't catch that — could you rephrase?";
 
-    // Interactions API returns the generated content in outputs.
-    const reply =
-      data?.outputs
-        ?.filter((item) => item?.type === 'text')
-        ?.map((item) => item?.text)
-        ?.join('')
-        ?.trim() ||
-      "Sorry, I didn't catch that — could you rephrase?";
+res.status(200).json({ reply });
 
-    res.status(200).json({ reply });
+    
   } catch (err) {
     console.error('Gemini request failed:', err);
 
