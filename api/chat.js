@@ -120,71 +120,92 @@ CONTACT
 - Location: London, United Kingdom
 - There is also a contact form on this page for direct messages.`;
 
-  try {
-    const geminiRes = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/interactions',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
+try {
+  const geminiRes = await fetch(
+    'https://generativelanguage.googleapis.com/v1beta/interactions',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        model: 'gemini-3.6-flash',
+        system_instruction: systemPrompt,
+        input: userMessage,
+
+        // Keep the response concise without cutting it off too aggressively.
+        generation_config: {
+          max_output_tokens: 1000,
+          temperature: 0.6,
+          thinking_level: 'low',
         },
-        body: JSON.stringify({
-          model: 'gemini-3.6-flash',
-          system_instruction: systemPrompt,
-          input: userMessage,
-          generation_config: {
-            max_output_tokens: 300,
-            temperature: 0.6,
-          },
-        }),
-      }
-    );
-    const data = await geminiRes.json();
+      }),
+    }
+  );
 
-console.log('Gemini status:', geminiRes.status);
-console.log('Gemini interaction status:', data?.status);
-console.log('Gemini response:', JSON.stringify(data));
+  const data = await geminiRes.json();
 
-let reply = '';
+  console.log('Gemini HTTP status:', geminiRes.status);
+  console.log('Gemini interaction status:', data?.status);
+  console.log('Gemini usage:', JSON.stringify(data?.usage));
+  console.log('Gemini response:', JSON.stringify(data));
 
-if (Array.isArray(data?.steps)) {
-  for (const step of data.steps) {
-    if (step?.type !== 'model_output') continue;
+  if (!geminiRes.ok) {
+    console.error('Gemini API error:', data);
 
-    if (Array.isArray(step?.content)) {
-      for (const content of step.content) {
-        if (
-          content?.type === 'text' &&
-          typeof content?.text === 'string'
-        ) {
-          reply += content.text;
+    res.status(502).json({
+      reply:
+        "I'm having trouble reaching the assistant right now — please try again shortly.",
+    });
+
+    return;
+  }
+
+  let reply = '';
+
+  // Current Interactions API response:
+  // steps -> model_output -> content -> text
+  if (Array.isArray(data?.steps)) {
+    for (const step of data.steps) {
+      if (step?.type !== 'model_output') continue;
+
+      if (Array.isArray(step?.content)) {
+        for (const content of step.content) {
+          if (
+            content?.type === 'text' &&
+            typeof content.text === 'string'
+          ) {
+            reply += content.text;
+          }
         }
       }
     }
   }
-}
 
-reply = reply.trim();
+  reply = reply.trim();
 
-if (!reply) {
-  console.error('No text found in Gemini response:', JSON.stringify(data));
+  if (!reply) {
+    console.error('No text found in Gemini response.');
 
-  reply = "Sorry, I couldn't get a response just now.";
-}
-
-console.log('Final reply sent to browser:', reply);
-
-res.status(200).json({ reply });
-
-
-    
-  } catch (err) {
-    console.error('Gemini request failed:', err);
-
-    res.status(502).json({
+    res.status(200).json({
       reply:
-        "I'm having trouble reaching the assistant right now — please try again shortly, or reach Shreya directly via the Contact section.",
+        "Sorry, I couldn't get a response just now. Could you try asking that another way?",
     });
+
+    return;
   }
+
+  console.log('Final reply:', reply);
+
+  res.status(200).json({ reply });
+
+} catch (err) {
+  console.error('Gemini request failed:', err);
+
+  res.status(502).json({
+    reply:
+      "I'm having trouble reaching the assistant right now — please try again shortly.",
+  });
 }
+
